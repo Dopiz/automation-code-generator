@@ -19,7 +19,7 @@ def camel_to_snake(text: str):
 
 class Coder:
     template = "code.tpl"
-    output_path = "output/{class_name}"
+    output_path = "output/%(class_name)s"
 
     def __init__(self, data: dict = None):
         self.data = data or {}
