@@ -6,8 +6,8 @@ from .base import Coder, CodeGenerator, camel_to_snake
 
 @dataclass
 class Variable:
-    ori_name: str
     name: str
+    ori_name: str
     type: str
     require: bool = True
 
@@ -78,12 +78,10 @@ class ApiCodeGenerator(CodeGenerator):
     def _process(self) -> Coder:
         definition_objects, data = self._process_data()
         yield ComponentApiCoder(data)
-        # yield ServiceConfigCoder(data)
         yield TestScriptCoder(data)
         yield DefinitionObjectCoder(definition_objects)
 
     def _process_data(self):
-
         definitions = self.data['definitions']
         definition_objects = []
         for name, item in definitions.items():
@@ -135,39 +133,22 @@ class ApiCodeGenerator(CodeGenerator):
                 
                 parameters = api[method]['parameters']
                 for param in parameters:
-                    if param['in'] == "path":
+                    param_in = param['in']
+                    if param_in != "body":
                         variable = Variable(
                             ori_name=param['name'],
                             name=camel_to_snake(param['name']),
                             type=self._type_mapping(param['type']),
                             require=param['required']
                         )
-                        api_item.in_path.append(variable)
-                    elif param['in'] == "header":
-                        variable = Variable(
-                            ori_name=param['name'],
-                            name=camel_to_snake(param['name']),
-                            type=self._type_mapping(param['type']),
-                            require=param['required']
-                        )
-                        api_item.headers.append(variable)
-                    elif param['in'] == "query":
-                        variable = Variable(
-                            ori_name=param['name'],
-                            name=camel_to_snake(param['name']),
-                            type=self._type_mapping(param['type']),
-                            require=param['required']
-                        )
-                        api_item.params.append(variable)
-                    elif param['in'] == "formData":
-                        variable = Variable(
-                            ori_name=param['name'],
-                            name=camel_to_snake(param['name']),
-                            type=self._type_mapping(param['type']),
-                            require=param['required']
-                        )
-                        api_item.data.append(variable)
-                    elif param['in'] == "body":
+                        target = {
+                            'path': api_item.in_path,
+                            'header': api_item.headers,
+                            'query': api_item.params,
+                            'formData': api_item.data
+                        }.get(param_in)
+                        target.append(variable)
+                    else:
                         target = api_item.body if method.upper() == "POST" else api_item.params
                         if ref := param['schema'].get('$ref'):
                             ref = ref.split("/")[-1]
